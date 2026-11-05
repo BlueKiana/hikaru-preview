@@ -803,6 +803,20 @@ body.hikaru-light .hset-card p,body.hikaru-light .hset-card-foot,body.hikaru-lig
 @media(max-width:850px){.hset-shell{grid-template-columns:1fr}.hset-menu{position:static;grid-template-columns:repeat(2,minmax(0,1fr))}.hset-top{padding:18px}.hset-status-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.hset-content{padding:15px}}
 
 
+
+/* V52 — approved settings-only UI: directional menu chevrons and two inline save controls. */
+#hikSettingsRoot .hset-menu-arrow{display:inline-flex;align-items:center;justify-content:center;direction:ltr;flex:none}
+#hikSettingsRoot .hset-menu-arrow svg{width:20px;height:20px;display:block;stroke:var(--mint);stroke-width:2.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+#hikSettingsRoot .hset-number-wrap{position:relative;min-width:0}
+#hikSettingsRoot .hset-number-wrap .hset-control{padding-inline-start:90px}
+#hikSettingsRoot .hset-number-suffix{position:absolute;inset-inline-end:35px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--muted);pointer-events:none;font-weight:700}
+#hikSettingsRoot .hset-number-example{position:absolute;inset-inline-end:35px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--muted);opacity:.65;pointer-events:none}
+#hikSettingsRoot .hset-inline-actions{display:flex;justify-content:flex-start;gap:8px;margin-top:12px}
+#hikSettingsRoot .hset-inline-save{display:inline-flex;align-items:center;gap:7px;background:var(--lime);color:#173d2c;border:1px solid var(--lime);border-radius:9px;padding:9px 14px;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+#hikSettingsRoot .hset-inline-save svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#hikSettingsRoot .hset-inline-save:disabled{opacity:.45;cursor:not-allowed}
+body.hikaru-light #hikSettingsRoot .hset-inline-save{background:#008b60;color:#fff;border-color:#008b60}
+
 /* V51 settings refinements: deliberately scoped only to settings root. */
 #hikSettingsRoot .hset-menu button{display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:right}
 #hikSettingsRoot .hset-menu-name{font-size:13px;font-weight:700}
@@ -2110,7 +2124,7 @@ const VISIBLE_GROUPS=[0,2,3,4];
 const GROUP_DESCRIPTIONS={0:'دسترسی‌های موقت و تنظیمات مهم مدیر',2:'مدت پیش‌فاکتور و محدودیت تعداد خرید',3:'رزرو، هشدار موجودی و گارانتی',4:'پیامک و زمان‌بندی ارتباط با مشتری'};
 function shown(s){return VISIBLE_IDS.has(s.id);}
 function menu(){
- const h=VISIBLE_GROUPS.map(i=>`<button type="button" data-hset-group="${i}" class="${group===i?'active':''}"><span class="hset-menu-name">${esc(GROUPS[i])}</span><strong class="hset-menu-arrow" aria-hidden="true">&gt;</strong></button>`).join('');
+ const h=VISIBLE_GROUPS.map(i=>`<button type="button" data-hset-group="${i}" class="${group===i?'active':''}"><span class="hset-menu-name">${esc(GROUPS[i])}</span><strong class="hset-menu-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M9 6l6 6-6 6"/></svg></strong></button>`).join('');
  $('hsetMenu').innerHTML=h;
 }
 // V51: manager-controlled time-limited access grants, demonstration only.
@@ -2189,12 +2203,15 @@ function confirmCal(){const key=`${calYear}/${String(calMonth).padStart(2,'0')}/
 function card(s){const can=permitted(s),ask=requestable(s),disabled=(!can&&!ask);let control='';const val=values[s.id];const attrs=`data-hset-id="${s.id}" ${disabled?'disabled':''} aria-label="${esc(s.title)}"`;
 if(s.type==='select')control=`<select class="hset-control" ${attrs}>${s.options.map(([v,label])=>`<option value="${esc(v)}" ${(s.id===4&&String(val).startsWith('manual:')?v==='manual':v===val)?'selected':''}>${esc(label)}</option>`).join('')}</select>`;
 if(s.id===4){control+=`<div class="hset-manual-retention"><button type="button" class="hset-date-trigger" data-retention-calendar="1" ${role!=='admin'?'disabled':''}>▦ ${String(val).startsWith('manual:')?'تغییر تاریخ دستی':'انتخاب تاریخ دستی'}</button><span class="hset-muted">${String(val).startsWith('manual:')?'تا '+esc(calendarPersianDisplay(new Date(val.slice(7))))+' ساعت '+esc(new Date(val.slice(7)).toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit',hour12:false})):'در حالت تنظیم دستی، تاریخ و ساعت را از تقویم انتخاب کنید.'}</span></div>`;}
-if(s.type==='number')control=`<input class="hset-control" type="number" min="0" max="1000000" step="1" value="${esc(val)}" ${attrs}>`;
+if(s.type==='number'){
+  const input=`<input class="hset-control" type="number" min="0" max="1000000" step="1" value="${esc(val)}" ${s.id===14?'placeholder="مثلاً ۱"':''} ${attrs}>`;
+  control=(s.id===12||s.id===14)?`<div class="hset-number-wrap">${input}${s.id===12?'<span class="hset-number-suffix" aria-hidden="true">ساعت</span>':'<span class="hset-number-example" aria-hidden="true">مثلاً ۱</span>'}</div>`:input;
+}
 if(s.type==='text')control=`<input class="hset-control" type="text" maxlength="120" value="${esc(val)}" ${attrs}>`;
 if(s.type==='textarea')control=`<textarea class="hset-control" rows="3" maxlength="500" ${attrs}>${esc(val)}</textarea>`;
 if(s.type==='switch')control=`<label class="hset-switch-line"><span>${val?'فعال':'غیرفعال'}</span><input type="checkbox" role="switch" ${attrs} ${val?'checked':''}><span class="hset-toggle-track" aria-hidden="true"><i></i></span></label>`;
 const lock=disabled?'فقط مشاهده':ask?'درخواست تغییر؛ نیازمند تأیید مدیر':s.sensitive?'تأیید مدیر اصلی':'قابل تنظیم (آزمایشی)';
-return `<article class="hset-card"><div class="hset-card-header"><span class="hset-card-id">تصمیم ${fmt(s.id)} · ${esc(s.option)}</span><span class="hset-lock">${disabled?'🔒 ':''}${esc(lock)}</span></div><h4>${esc(s.title)}</h4><p>${esc(s.desc)}</p>${control}${ask?`<button type="button" class="hset-button hset-secondary" data-hset-request="${s.id}">درخواست تغییر تنظیمات محک</button>`:""}<div class="hset-card-foot"><span>${s.sensitive?'دارای کنترل مدیریتی':'نسخه نمایشی'}</span><span class="${JSON.stringify(values[s.id])!==JSON.stringify(saved[s.id])?'hset-changed':''}">${JSON.stringify(values[s.id])!==JSON.stringify(saved[s.id])?'● تغییر داده‌شده':'بدون تغییر'}</span></div></article>`;}
+return `<article class="hset-card"><div class="hset-card-header"><span class="hset-card-id">تصمیم ${fmt(s.id)} · ${esc(s.option)}</span><span class="hset-lock">${disabled?'🔒 ':''}${esc(lock)}</span></div><h4>${esc(s.title)}</h4><p>${esc(s.desc)}</p>${control}${(s.id===12||s.id===14)&&can?`<div class="hset-inline-actions"><button type="button" class="hset-inline-save" data-hset-inline-save="${s.id}" aria-label="ذخیره ${esc(s.title)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12l4 4v14H3V3h2zm2 0v7h10V3M7 21v-8h10v8"/></svg>ذخیره</button></div>`:""}${ask?`<button type="button" class="hset-button hset-secondary" data-hset-request="${s.id}">درخواست تغییر تنظیمات محک</button>`:""}<div class="hset-card-foot"><span>${s.sensitive?'دارای کنترل مدیریتی':'نسخه نمایشی'}</span><span class="${JSON.stringify(values[s.id])!==JSON.stringify(saved[s.id])?'hset-changed':''}">${JSON.stringify(values[s.id])!==JSON.stringify(saved[s.id])?'● تغییر داده‌شده':'بدون تغییر'}</span></div></article>`;}
 function render(){menu();const list=SETTINGS.filter(s=>shown(s)&&(filter?([s.title,s.desc,GROUPS[s.group]].join(' ').includes(filter)):s.group===group));$('hsetSectionTitle').textContent=filter?'نتایج جست‌وجو':GROUPS[group];$('hsetCategoryName').textContent=filter?'جست‌وجوی تنظیمات':'تنظیمات قابل تغییر';$('hsetSectionDescription').textContent=filter?'تنها گزینه‌های کاربردی و قابل تغییر نمایش داده می‌شوند.':(GROUP_DESCRIPTIONS[group]||'تنظیمات کاربردی');$('hsetVisibleCount').textContent=fmt(list.length)+' تنظیم';$('hsetCards').innerHTML=(group===0&&!filter?grantSection():'')+(list.length?list.map(card).join(''):'<div class="hset-empty">در این بخش تنظیم قابل تغییر دیگری وجود ندارد.</div>');header();}
 function showDialog(title,description,content,confirm,onConfirm){dialog={onConfirm};$('hsetModalTitle').textContent=title;$('hsetModalText').textContent=description;$('hsetModalBody').innerHTML=content;$('hsetModalConfirm').textContent=confirm;$('hsetModal').classList.remove('hidden-view');}
 function closeDialog(){hideCal();$('hsetModal').classList.add('hidden-view');$('hsetModalBody').innerHTML='';dialog=null;}
@@ -2227,6 +2244,7 @@ function valueChanged(e){const el=e.target.closest('[data-hset-id]');if(!el)retu
 }
 $('hsetCards').addEventListener('input',valueChanged);$('hsetCards').addEventListener('change',valueChanged);
 $('hsetCards').addEventListener('click',e=>{
+ const saveBtn=e.target.closest('[data-hset-inline-save]');if(saveBtn){save();return;}
  const add=e.target.closest('#hsetAddGrant');if(add){openGrantDialog();return;}
  const rev=e.target.closest('[data-grant-revoke]');if(rev){confirmRevoke(rev.dataset.grantRevoke);return;}
  const dateBtn=e.target.closest('[data-retention-calendar]');if(dateBtn){showCal(dateBtn,'retention');return;}
